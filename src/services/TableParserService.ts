@@ -14,7 +14,7 @@ export class TableParserService {
     const headers = this.extractHeaders(table);
     const tbodyRows = Array.from(table.querySelectorAll<HTMLTableRowElement>("tbody tr"));
 
-    if (headers.length === 0 || tbodyRows.length === 0) return [];
+    if (headers.length === 0 || tbodyRows.length === 0 || headers.length !== tbodyRows.length) return [];
 
     tbodyRows.forEach((tr, rowIndex) => {
       const studentName = this.getStudentName(tr);

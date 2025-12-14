@@ -1,7 +1,7 @@
 <template>
   <div v-if="visible" class="toolbar">
     <button class="downloadButton" @click="handleDownloadClick">Descargar CSV</button>
-    <label class="uploadLabel" :for="inputId"> Subir CSV </label>
+    <button class="uploadLabel" :for="inputId">Subir CSV</button>
     <input :id="inputId" type="file" accept=".csv,text/csv" style="display: none" @change="handleFileChange" />
   </div>
 </template>

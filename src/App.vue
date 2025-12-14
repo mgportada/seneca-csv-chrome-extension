@@ -18,8 +18,8 @@
 </template>
 
 <script setup lang="ts">
-import Toolbar from "@/components/Toolbar.vue";
-import UploadModal from "@/components/UploadModal.vue";
+import Toolbar from "@/components/Toolbar/Toolbar.vue";
+import UploadModal from "@/components/UploadModal/UploadModal.vue";
 import { DownloadHandler } from "@/content/DownloadHandler";
 import { UploadHandler } from "@/content/UploadHandler";
 import type { UploadProgress } from "@/types";
