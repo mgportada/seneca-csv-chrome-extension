@@ -19,7 +19,8 @@
   "content_scripts": [
     {
       "matches": ["https://seneca.juntadeandalucia.es/*"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "css": ["content.css"]
     }
   ]
 }

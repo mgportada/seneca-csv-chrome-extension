@@ -1,0 +1,61 @@
+/* Toolbar Container */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  background: #f8f9fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+  padding: 8px;
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Download Button */
+.downloadButton {
+  display: inline-block;
+  padding: 10px 14px;
+  margin: 0 8px 0 0;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  transition: background 0.2s;
+}
+
+.downloadButton:hover {
+  background: #0056b3;
+}
+
+.downloadButton:active {
+  background: #003d82;
+}
+
+/* Upload Label */
+.uploadLabel {
+  display: inline-block;
+  padding: 10px 14px;
+  margin: 0;
+  background: #28a745;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  transition: background 0.2s;
+}
+
+.uploadLabel:hover {
+  background: #218838;
+}
+
+.uploadLabel:active {
+  background: #1e7e34;
+}

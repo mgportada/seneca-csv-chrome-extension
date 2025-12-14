@@ -1,7 +1,7 @@
 <template>
-  <div v-if="visible" :style="styles.toolbar">
-    <button :style="styles.downloadButton" @click="handleDownloadClick">Descargar CSV</button>
-    <label :style="styles.uploadLabel" :for="inputId"> Subir CSV </label>
+  <div v-if="visible" :class="$style.toolbar">
+    <button :class="$style.downloadButton" @click="handleDownloadClick">Descargar CSV</button>
+    <label :class="$style.uploadLabel" :for="inputId"> Subir CSV </label>
     <input :id="inputId" type="file" accept=".csv,text/csv" style="display: none" @change="handleFileChange" />
   </div>
 </template>
@@ -34,45 +34,6 @@ const handleFileChange = (event: Event) => {
     target.value = ""; // Reset input
   }
 };
-
-const styles = {
-  toolbar: {
-    position: "sticky" as const,
-    top: "0",
-    zIndex: 999,
-    background: "#f8f9fa",
-    border: "1px solid #e1e4e8",
-    borderRadius: "6px",
-    padding: "8px",
-    margin: "8px 0",
-    display: "flex" as const,
-    alignItems: "center" as const,
-    gap: "8px",
-  },
-  downloadButton: {
-    display: "inline-block" as const,
-    padding: "10px 14px",
-    margin: "0 8px 0 0",
-    background: "#007bff",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer" as const,
-    fontSize: "14px",
-    fontWeight: 600,
-    lineHeight: "20px",
-  },
-  uploadLabel: {
-    display: "inline-block" as const,
-    padding: "10px 14px",
-    margin: "0",
-    background: "#28a745",
-    color: "#fff",
-    borderRadius: "4px",
-    cursor: "pointer" as const,
-    fontSize: "14px",
-    fontWeight: 600,
-    lineHeight: "20px",
-  },
-};
 </script>
+
+<style module src="./Toolbar.module.css"></style>
