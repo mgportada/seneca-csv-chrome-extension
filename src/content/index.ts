@@ -26,7 +26,8 @@ export class SenecaExtension {
     const tryInit = () => {
       const h1 = document.querySelector("h1");
       const table = document.querySelector("table");
-      if (!h1 || !h1.textContent?.includes("CUADERNO DE CLASE") || !table) {
+      const h1Text = h1?.textContent?.trim() || "";
+      if (!h1 || h1Text !== "CUADERNO DE CLASE" || !table) {
         return;
       }
       if (document.getElementById("seneca-extension-app")) {
