@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Random Background Color",
+  "version": "1.0",
+  "description": "Cambia el color de fondo de la página de forma aleatoria",
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Cambiar fondo"
+  },
+  "permissions": ["activeTab", "scripting"]
+}
