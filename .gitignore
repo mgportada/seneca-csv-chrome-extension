@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Local-only examples (keep out of git)
+local_examples/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
