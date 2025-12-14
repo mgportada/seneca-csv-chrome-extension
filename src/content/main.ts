@@ -7,8 +7,6 @@ import App from "@/App.vue";
 import { createApp } from "vue";
 import { SenecaExtension } from "./index";
 // Importar CSS modules para que Vite los incluya en el bundle
-import "../components/Toolbar.module.css";
-import "../components/UploadModal.module.css";
 
 // Initialize extension when DOM is ready
 if (document.readyState === "loading") {

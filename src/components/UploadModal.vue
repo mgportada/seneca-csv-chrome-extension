@@ -1,32 +1,30 @@
 <template>
   <Teleport to="body">
-    <div v-if="visible" :class="$style.overlay" @click="$emit('close')">
-      <div :class="$style.modal" @click.stop>
-        <div :class="$style.header">
+    <div v-if="visible" class="overlay" @click="$emit('close')">
+      <div class="modal" @click.stop>
+        <div class="header">
           {{ title }}
         </div>
 
-        <div :class="$style.progressContainer">
-          <div :class="$style.progressText">{{ current }} / {{ total }}</div>
-          <div :class="$style.progressBar">
-            <div :class="$style.progressFill" :style="{ width: `${percentage}%` }"></div>
+        <div class="progressContainer">
+          <div class="progressText">{{ current }} / {{ total }}</div>
+          <div class="progressBar">
+            <div class="progressFill" :style="{ width: `${percentage}%` }"></div>
           </div>
         </div>
 
-        <div :class="$style.logContainer" ref="logContainer">
+        <div class="logContainer" ref="logContainer">
           <div v-for="(log, index) in logs" :key="index" :class="getLogClass(log.type)">
             {{ log.message }}
           </div>
         </div>
 
-        <div :class="$style.footer">
+        <div class="footer">
           <button v-if="!completed && !cancelled" :class="pauseButtonClass" @click="$emit('pause')">
             {{ paused ? "Reanudar" : "Pausar" }}
           </button>
-          <button v-if="!completed && !cancelled" :class="$style.cancelButton" @click="$emit('cancel')">
-            Cancelar
-          </button>
-          <button v-if="completed || cancelled" :class="$style.closeButton" @click="$emit('close')">Cerrar</button>
+          <button v-if="!completed && !cancelled" class="cancelButton" @click="$emit('cancel')">Cancelar</button>
+          <button v-if="completed || cancelled" class="closeButton" @click="$emit('close')">Cerrar</button>
         </div>
       </div>
     </div>
@@ -105,4 +103,4 @@ watch(
 );
 </script>
 
-<style module src="./UploadModal.module.css"></style>
+<style scoped module src="./UploadModal.css"></style>
