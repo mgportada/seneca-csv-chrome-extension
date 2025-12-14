@@ -11,9 +11,10 @@ export default defineConfig({
     },
   },
   build: {
+    sourcemap: "inline", // Cambiado a inline para evitar carga externa del .map
     rollupOptions: {
       input: {
-        content: resolve(__dirname, "src/content/index.ts"),
+        content: resolve(__dirname, "src/content/main.ts"),
       },
       output: {
         entryFileNames: "[name].js",

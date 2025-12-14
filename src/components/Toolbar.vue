@@ -1,6 +1,6 @@
 <template>
   <div v-if="visible" :style="styles.toolbar">
-    <button :style="styles.downloadButton" @click="$emit('download')">Descargar CSV</button>
+    <button :style="styles.downloadButton" @click="handleDownloadClick">Descargar CSV</button>
     <label :style="styles.uploadLabel" :for="inputId"> Subir CSV </label>
     <input :id="inputId" type="file" accept=".csv,text/csv" style="display: none" @change="handleFileChange" />
   </div>
@@ -11,18 +11,20 @@ interface Props {
   visible?: boolean;
 }
 
-interface Emits {
-  (e: "download"): void;
-  (e: "upload", file: File): void;
-}
-
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   visible: true,
 });
 
-const emit = defineEmits<Emits>();
+const emit = defineEmits<{
+  download: [];
+  upload: [file: File];
+}>();
 
 const inputId = "seneca-csv-upload-input";
+
+const handleDownloadClick = () => {
+  emit("download");
+};
 
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;

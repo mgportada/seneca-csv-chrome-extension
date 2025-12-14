@@ -121,6 +121,31 @@ Todas las interfaces están definidas en `src/types/index.ts`:
 5. ✅ **Mejor separación de responsabilidades**
 6. ✅ **Código más mantenible y escalable**
 
-## 📄 Licencia
+## � Debugging
+
+El proyecto incluye **source maps** para debugging:
+
+```bash
+npm run build  # Genera dist/content.js.map
+```
+
+En Chrome DevTools podrás ver y debuggear los archivos TypeScript originales:
+
+- Breakpoints en archivos `.ts` y `.vue`
+- Variables con nombres originales
+- Stack traces legibles
+
+Ver [DEBUGGING.md](./DEBUGGING.md) para guía completa.
+
+## 📚 Documentación
+
+- **[README.md](./README.md)** - Esta guía
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Documentación técnica detallada
+- **[MIGRATION.md](./MIGRATION.md)** - Comparación JS vs TS
+- **[QUICKSTART.md](./QUICKSTART.md)** - Instalación rápida
+- **[DEBUGGING.md](./DEBUGGING.md)** - Guía de debugging
+- **[SUMMARY.md](./SUMMARY.md)** - Resumen ejecutivo
+
+## �📄 Licencia
 
 MIT
