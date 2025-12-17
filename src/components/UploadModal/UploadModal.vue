@@ -12,11 +12,6 @@
         </div>
 
         <section :class="$style.body">
-          <div :class="$style.instructions">
-            <p>Pega directamente el rango de la hoja de cálculo con nombres en la primera columna.</p>
-            <p>Usa Ctrl+V / Cmd+V sobre la tabla o edita celdas manualmente.</p>
-          </div>
-
           <div
             :class="[$style.pasteZone, uploading ? $style.pasteZoneDisabled : '']"
             tabindex="0"
@@ -40,7 +35,7 @@
                       :data-row="rowIndex"
                       :data-col="colIndex"
                       :data-header="header"
-                      :class="$style.cell"
+                      :class="[$style.cell, valueClass(row?.[colIndex] || '', colIndex)]"
                       @paste.prevent="handleCellPaste($event, rowIndex, colIndex)"
                       @input="onCellInput($event, rowIndex, colIndex)"
                     >
@@ -210,9 +205,13 @@ const normalize = (value: string): string =>
 
 const onCellInput = (event: Event, rowIndex: number, colIndex: number) => {
   const target = event.target as HTMLElement;
-  const value = (target.textContent || "").trim();
+  const raw = (target.textContent || "").trim();
+  const value = sanitizeValue(raw, colIndex);
   ensureRowLength(rowIndex, colIndex);
   rows.value[rowIndex][colIndex] = value;
+  if (target.textContent !== value) {
+    target.textContent = value;
+  }
 };
 
 const applyPastedData = (data: CSVData): number => {
@@ -228,7 +227,7 @@ const applyPastedData = (data: CSVData): number => {
     if (targetRowIndex === -1) return;
 
     pastedHeaders.forEach((pastedHeader, idx) => {
-      const value = (pastedRow[idx + 1] || "").trim();
+      const value = sanitizeValue((pastedRow[idx + 1] || "").trim(), colIndexFromHeader(pastedHeader, idx));
       if (value === "") return;
 
       const headerMatchIndex = currentHeaders.findIndex((h) => normalize(h || "") === normalize(pastedHeader));
@@ -274,10 +273,43 @@ const handleCellPaste = (event: ClipboardEvent, startRow: number, startCol: numb
     for (let c = 0; c < rowData.length; c++) {
       const targetCol = startColumn + c;
       ensureRowLength(targetRow, targetCol);
-      const value = (rowData[c] || "").trim();
+      const value = sanitizeValue((rowData[c] || "").trim(), targetCol);
       rows.value[targetRow][targetCol] = value;
     }
   }
+};
+
+// Utilities: validation + coloring
+const sanitizeValue = (raw: string, colIndex: number): string => {
+  // Never sanitize the first column (Alumno/a)
+  if (colIndex === 0) return raw;
+  const cleaned = raw.replace(/,/g, ".").replace(/[^0-9.\-]/g, "");
+  if (cleaned === "") return "";
+  const num = Number(cleaned);
+  if (!Number.isFinite(num)) return "";
+  if (num < 0 || num > 10) return "";
+  // Keep up to 2 decimals, drop trailing zeros
+  const fixed = Math.round(num * 100) / 100;
+  return String(fixed);
+};
+
+const valueClass = (val: string, colIndex: number) => {
+  if (colIndex === 0) return ""; // do not color name column
+  const s = (val ?? "").toString().trim();
+  if (s === "") return "";
+  const v = Number(s.replace(/,/g, "."));
+  if (!Number.isFinite(v)) return "";
+  if (v >= 0 && v < 5) return $style.valLow;
+  if (v >= 5 && v < 7) return $style.valMidLow;
+  if (v >= 7 && v < 9) return $style.valMidHigh;
+  if (v >= 9 && v <= 10) return $style.valHigh;
+  return "";
+};
+
+const colIndexFromHeader = (pastedHeader: string, fallbackIdx: number): number => {
+  const currentHeaders = renderHeaders.value;
+  const matchIndex = currentHeaders.findIndex((h) => normalize(h || "") === normalize(pastedHeader));
+  return matchIndex !== -1 ? matchIndex : fallbackIdx + 1;
 };
 
 const ensureRowLength = (rowIndex: number, colIndex: number) => {

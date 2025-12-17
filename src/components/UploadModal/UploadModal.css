@@ -178,6 +178,20 @@
   border-color: #38bdf8;
 }
 
+/* Value-based coloring (only applied to activity columns) */
+.valLow {
+  background-color: #e0a7b0;
+}
+.valMidLow {
+  background-color: #def6d6;
+}
+.valMidHigh {
+  background-color: #bfd6dc;
+}
+.valHigh {
+  background-color: #37b8cc;
+}
+
 .placeholder {
   text-align: center;
   color: #94a3b8;
