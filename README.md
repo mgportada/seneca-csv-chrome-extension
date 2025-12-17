@@ -16,15 +16,7 @@ Extensión de Chrome para gestionar calificaciones de estudiantes en Seneca, des
 npm install
 ```
 
-### Build de producción
-
-```bash
-npm run build
-```
-
-Esto generará la carpeta `dist/` con todos los archivos necesarios para la extensión.
-
-## 🔧 Instalación en Chrome
+## 🔧 Instalación en Chrome d
 
 1. Ejecuta `npm run build` que generará la carpeta `dist/`
 2. Abre Chrome, ve a `chrome://extensions/` y activa el "Modo de desarrollador"

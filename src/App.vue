@@ -1,18 +1,17 @@
 <template>
   <div>
-    <Toolbar @download="handleDownload" @upload="handleUpload" />
+    <Toolbar @open="openModal" />
     <UploadModal
       :visible="modalState.visible"
-      :title="modalState.title"
+      :logs="modalState.logs"
+      :uploading="modalState.uploading"
       :current="modalState.current"
       :total="modalState.total"
-      :logs="modalState.logs"
-      :paused="modalState.paused"
-      :completed="modalState.completed"
-      :cancelled="modalState.cancelled"
+      :percentage="modalState.percentage"
+      :initialHeaders="initialHeaders"
+      :initialRows="initialRows"
       @close="handleModalClose"
-      @pause="handleModalPause"
-      @cancel="handleModalCancel"
+      @submit="handleModalSubmit"
     />
   </div>
 </template>
@@ -20,106 +19,89 @@
 <script setup lang="ts">
 import Toolbar from "@/components/Toolbar/Toolbar.vue";
 import UploadModal from "@/components/UploadModal/UploadModal.vue";
-import { DownloadHandler } from "@/content/DownloadHandler";
 import { UploadHandler } from "@/content/UploadHandler";
-import type { UploadProgress } from "@/types";
-import { reactive } from "vue";
+import { TableParserService } from "@/services/TableParserService";
+import type { CSVData, UploadProgress } from "@/types";
+import { reactive, ref } from "vue";
 
 interface ModalState {
   visible: boolean;
-  title: string;
   current: number;
   total: number;
+  percentage: number;
   logs: Array<{ message: string; type: "info" | "success" | "error" }>;
-  paused: boolean;
-  completed: boolean;
-  cancelled: boolean;
+  uploading: boolean;
 }
 
 const modalState = reactive<ModalState>({
   visible: false,
-  title: "Subiendo calificaciones...",
   current: 0,
   total: 0,
+  percentage: 0,
   logs: [],
-  paused: false,
-  completed: false,
-  cancelled: false,
+  uploading: false,
 });
 
 let uploadHandler: UploadHandler | null = null;
+const initialHeaders = ref<string[]>([]);
+const initialRows = ref<string[][]>([]);
 
-/**
- * Handle download button click
- */
-const handleDownload = () => {
-  DownloadHandler.handleDownload();
+const openModal = () => {
+  modalState.visible = true;
+  // Build initial grid from the Seneca table (students x activities)
+  initialHeaders.value = [];
+  initialRows.value = [];
+  const table = document.querySelector<HTMLTableElement>("table");
+  if (table) {
+    const tableCells = TableParserService.parseTable(table);
+    if (tableCells.length > 0) {
+      const students = Array.from(new Set(tableCells.map((c) => c.rowName))).filter((n) => n && n.trim() !== "");
+      const activities = Array.from(new Set(tableCells.map((c) => c.columnName))).filter((n) => n && n.trim() !== "");
+      initialHeaders.value = ["Alumno/a", ...activities];
+      initialRows.value = students.map((s) => [s, ...Array(activities.length).fill("")]);
+    }
+  }
 };
 
-/**
- * Handle file upload
- */
-const handleUpload = async (file: File) => {
-  // Reset modal state
-  modalState.visible = true;
+const handleModalSubmit = async (data: CSVData) => {
   modalState.current = 0;
   modalState.total = 0;
+  modalState.percentage = 0;
   modalState.logs = [];
-  modalState.paused = false;
-  modalState.completed = false;
-  modalState.cancelled = false;
+  modalState.uploading = true;
 
-  // Create upload handler
   uploadHandler = new UploadHandler((progress: UploadProgress) => {
     modalState.current = progress.current;
     modalState.total = progress.total;
+    modalState.percentage = progress.percentage;
     modalState.logs.push({
       message: progress.message,
       type: progress.type,
     });
 
     if (progress.type === "error" || progress.percentage === 100) {
-      modalState.completed = true;
+      modalState.uploading = false;
     }
   });
 
   try {
-    await uploadHandler.processFile(file);
+    await uploadHandler.processData(data);
+    modalState.uploading = false;
   } catch (error) {
-    console.error("Error processing file:", error);
+    console.error("Error processing data:", error);
     modalState.logs.push({
       message: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
       type: "error",
     });
-    modalState.completed = true;
+    modalState.uploading = false;
   }
 };
 
-/**
- * Handle modal close
- */
 const handleModalClose = () => {
-  modalState.visible = false;
-  uploadHandler = null;
-};
-
-/**
- * Handle modal pause
- */
-const handleModalPause = () => {
-  if (uploadHandler) {
-    uploadHandler.pause();
-    modalState.paused = uploadHandler.isPaused();
-  }
-};
-
-/**
- * Handle modal cancel
- */
-const handleModalCancel = () => {
   if (uploadHandler) {
     uploadHandler.cancel();
-    modalState.cancelled = true;
   }
+  modalState.visible = false;
+  modalState.uploading = false;
 };
 </script>

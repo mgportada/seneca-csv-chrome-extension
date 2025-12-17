@@ -1,6 +1,6 @@
 import { SenecaAPIService } from "@/services/SenecaAPIService";
 import { TableParserService } from "@/services/TableParserService";
-import type { UploadPayloadItem, UploadProgress, UploadState, ValidationError } from "@/types";
+import type { CSVData, UploadPayloadItem, UploadProgress, UploadState, ValidationError } from "@/types";
 import { CSVUtils } from "@/utils/CSVUtils";
 
 /**
@@ -24,7 +24,13 @@ export class UploadHandler {
   async processFile(file: File): Promise<void> {
     const text = await file.text();
     const data = CSVUtils.parseCSV(text);
+    await this.processData(data);
+  }
 
+  /**
+   * Process already parsed CSV-like data (pasted grid)
+   */
+  async processData(data: CSVData | null): Promise<void> {
     if (!data || data.rows.length === 0) {
       this.emitProgress(0, 0, 0, "CSV vacío o inválido", "error");
       return;

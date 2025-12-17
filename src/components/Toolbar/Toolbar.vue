@@ -1,8 +1,6 @@
 <template>
   <div v-if="visible" :class="$style.toolbar">
-    <button :class="$style.downloadButton" @click="handleDownloadClick">Descargar CSV</button>
-    <label :class="$style.uploadLabel" :for="inputId">Subir CSV</label>
-    <input :id="inputId" type="file" accept=".csv,text/csv" style="display: none" @change="handleFileChange" />
+    <button type="button" :class="$style.primaryButton" @click="emit('open')">Pegar notas</button>
   </div>
 </template>
 
@@ -16,24 +14,8 @@ withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  download: [];
-  upload: [file: File];
+  open: [];
 }>();
-
-const inputId = "seneca-csv-upload-input";
-
-const handleDownloadClick = () => {
-  emit("download");
-};
-
-const handleFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (file) {
-    emit("upload", file);
-    target.value = ""; // Reset input
-  }
-};
 </script>
 
 <style scoped module src="./Toolbar.css"></style>
