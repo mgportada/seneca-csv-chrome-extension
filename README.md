@@ -49,3 +49,8 @@ El proyecto incluye **source maps** para debugging:
 ## �📄 Licencia
 
 MIT
+
+## TODO
+
+- [ ] Freeze header row and first column when scrolling in the upload modal table
+- [ ] Fetch mark with value, filter empty marks "" in the payload

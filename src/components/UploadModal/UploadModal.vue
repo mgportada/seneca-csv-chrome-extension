@@ -4,9 +4,7 @@
       <div :class="$style.modal" @click.stop>
         <div :class="$style.header" role="banner">
           <div :class="$style.titleBlock">
-            <p :class="$style.kicker">Carga de notas</p>
             <h2 :class="$style.title">Pega tus calificaciones</h2>
-            <p :class="$style.subtitle">Se sobrescribirán {{ marksCount }} notas para {{ studentCount }} alumnos</p>
           </div>
           <button :class="$style.close" @click="handleClose" aria-label="Cerrar">✕</button>
         </div>
@@ -189,8 +187,13 @@ const parseClipboard = (text: string): CSVData | null => {
   const parsedRows = lines.map((line) => line.split(delimiter));
   if (!parsedRows.length) return null;
 
-  const header = parsedRows[0].map((cell) => cell.trim());
-  const body = parsedRows.slice(1).map((row) => row.map((cell) => cell.trim()));
+  // Treat all pasted lines as body rows (no header extraction)
+  const body = parsedRows.map((row) => row.map((cell) => cell.trim()));
+  // Use current table headers as reference
+  const header = [
+    "Alumno/a",
+    ...Array.from({ length: Math.max(...body.map((r) => r.length)) - 1 }, (_, i) => `Act ${i + 1}`),
+  ];
 
   return { header, rows: body };
 };

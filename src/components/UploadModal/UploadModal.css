@@ -113,7 +113,7 @@
 
 .pasteZone {
   border: 1px solid rgb(72, 129, 166);
-  border-radius: 12px;
+  border-radius: 0;
   overflow: hidden;
   background: #ffffff;
   outline: none;
@@ -270,7 +270,7 @@
 }
 
 .summary {
-  color: #cbd5e1;
+  color: black;
   font-size: 14px;
 }
 
