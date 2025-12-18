@@ -31,7 +31,7 @@
                     <td
                       v-for="(header, colIndex) in renderHeaders"
                       :key="colIndex"
-                      contenteditable="true"
+                      :contenteditable="colIndex !== 0"
                       :data-row="rowIndex"
                       :data-col="colIndex"
                       :data-header="header"
@@ -204,6 +204,8 @@ const normalize = (value: string): string =>
     .trim();
 
 const onCellInput = (event: Event, rowIndex: number, colIndex: number) => {
+  // Prevent editing of student name column
+  if (colIndex === 0) return;
   const target = event.target as HTMLElement;
   const raw = (target.textContent || "").trim();
   const value = sanitizeValue(raw, colIndex);

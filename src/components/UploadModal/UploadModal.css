@@ -15,10 +15,11 @@
   width: 880px;
   max-width: calc(100vw - 48px);
   max-height: 88vh;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #ffffff; /* Fondo blanco */
+  color: rgb(32, 65, 83);
   border-radius: 12px;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgb(72, 129, 166); /* Div color */
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
   z-index: 2147483647; /* Above overlay */
   display: flex;
   flex-direction: column;
@@ -31,7 +32,9 @@
   align-items: flex-start;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px 20px;
+  background: rgb(32, 65, 83); /* Pestañas */
+  color: #ffffff;
 }
 
 .titleBlock {
@@ -60,7 +63,7 @@
   background: none !important;
   font-weight: 700;
   margin: 0;
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 .subtitle {
@@ -71,10 +74,9 @@
 }
 
 .close {
-  background: rgba(255, 255, 255, 0.04);
-  background: none !important;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #ffffff;
   border-radius: 50%;
   width: 32px;
   height: 32px;
@@ -86,8 +88,8 @@
 }
 
 .close:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.8);
 }
 
 .body {
@@ -96,23 +98,24 @@
   flex-direction: column;
   gap: 14px;
   overflow-y: auto;
+  background: #ffffff;
 }
 
 .instructions {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px dashed rgb(72, 129, 166);
   border-radius: 10px;
   padding: 12px 14px;
-  color: #cbd5e1;
+  color: rgb(32, 65, 83);
   font-size: 13px;
   line-height: 1.5;
 }
 
 .pasteZone {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgb(72, 129, 166);
   border-radius: 12px;
   overflow: hidden;
-  background: #0b1223;
+  background: #ffffff;
   outline: none;
 }
 
@@ -122,8 +125,8 @@
 }
 
 .pasteZone:focus-within {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+  border-color: rgb(27, 125, 162); /* Pestaña seleccionada */
+  box-shadow: 0 0 0 1px rgba(27, 125, 162, 0.35);
 }
 
 .pasteZoneDisabled {
@@ -135,17 +138,18 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: auto;
-  color: #e2e8f0;
+  color: rgb(32, 65, 83);
   font-size: 14px;
 }
 
 .dataTable thead {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgb(32, 65, 83); /* Pestañas */
+  color: #ffffff;
 }
 
 .dataTable th,
 .dataTable td {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgb(72, 129, 166);
   padding: 10px 8px;
   text-align: left;
   white-space: nowrap;
@@ -163,8 +167,15 @@
 
 .dataTable th {
   font-weight: 600;
-  color: #d8e5ff;
-  background: rgba(255, 255, 255, 0.03);
+  color: #ffffff;
+}
+
+.dataTable tbody tr:nth-child(odd) {
+  background: rgb(236, 239, 242); /* Filas impares */
+}
+
+.dataTable tbody tr:nth-child(even) {
+  background: #ffffff; /* Filas pares */
 }
 
 .cell {
@@ -254,8 +265,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgb(72, 129, 166);
+  background: #ffffff;
 }
 
 .summary {
@@ -287,9 +298,13 @@
 }
 
 .primary {
-  background: linear-gradient(135deg, #38bdf8 0%, #22d3ee 100%);
-  color: #0b1223;
-  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.25);
+  background: rgb(27, 125, 162); /* Pestaña seleccionada */
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(27, 125, 162, 0.25);
+}
+.primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(27, 125, 162, 0.35);
 }
 
 .primary:hover:not(:disabled) {
@@ -298,9 +313,12 @@
 }
 
 .secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #ffffff;
+  color: rgb(32, 65, 83);
+  border: 1px solid rgb(72, 129, 166);
+}
+.secondary:hover:not(:disabled) {
+  background: rgb(236, 239, 242);
 }
 
 .secondary:hover:not(:disabled) {
