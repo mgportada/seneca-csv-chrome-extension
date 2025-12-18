@@ -67,16 +67,6 @@ export interface CSVData {
 }
 
 /**
- * Payload item for uploading marks
- */
-export interface UploadPayloadItem {
-  rowName: string;
-  columnName: string;
-  markId: string;
-  value: number;
-}
-
-/**
  * CSV validation error
  */
 export interface ValidationError {

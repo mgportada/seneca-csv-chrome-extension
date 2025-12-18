@@ -1,4 +1,5 @@
 import type { TableCell } from "@/types";
+import { StringUtils } from "@/utils/StringUtils";
 
 /**
  * Service for parsing Seneca table structure
@@ -92,7 +93,7 @@ export class TableParserService {
     const td = tr.querySelector("td");
     const p = td ? td.querySelector("p") : null;
     const name = p ? p.textContent : td ? td.textContent : "";
-    return name ? name.replace(/\s+/g, " ").trim() : "";
+    return name ? StringUtils.cleanSpaces(name) : "";
   }
 
   /**
@@ -101,6 +102,6 @@ export class TableParserService {
   private static cleanText(el: HTMLElement): string {
     const span = el.querySelector("span.texto-SNC, span[data-name], div.d-block, p");
     const txt = (span ? span.textContent : el.textContent) || "";
-    return txt.replace(/\s+/g, " ").trim();
+    return StringUtils.cleanSpaces(txt);
   }
 }

@@ -1,7 +1,18 @@
 import { SenecaAPIService } from "@/services/SenecaAPIService";
 import { TableParserService } from "@/services/TableParserService";
-import type { CSVData, ModalTableCell, UploadPayloadItem, UploadProgress, UploadState, ValidationError } from "@/types";
+import type { CSVData, ModalTableCell, UploadProgress, UploadState, ValidationError } from "@/types";
 import { CSVUtils } from "@/utils/CSVUtils";
+import { StringUtils } from "@/utils/StringUtils";
+
+/**
+ * Unified upload item interface
+ */
+interface UploadItem {
+  studentName: string;
+  activityName: string;
+  markId: string;
+  value: number;
+}
 
 /**
  * Handler for CSV upload functionality
@@ -36,8 +47,7 @@ export class UploadHandler {
       return;
     }
 
-    // Directly upload the provided cells
-    await this.uploadCells(cells);
+    await this.upload(cells);
   }
 
   /**
@@ -61,7 +71,7 @@ export class UploadHandler {
       return;
     }
 
-    const { payload, errors } = this.buildPayload(data, tableMap);
+    const { items, errors } = this.buildUploadItems(data, tableMap);
 
     if (errors.length > 0) {
       const errorMsg = errors
@@ -71,66 +81,60 @@ export class UploadHandler {
       return;
     }
 
-    await this.uploadPayload(payload);
+    await this.upload(items);
   }
 
   /**
-   * Build payload from CSV data
+   * Build upload items from CSV data
    */
-  private buildPayload(
-    data: { header: string[]; rows: string[][] },
-    tableMap: any[]
-  ): { payload: UploadPayloadItem[]; errors: ValidationError[] } {
-    const header = data.header;
-    const activities = header.slice(1);
-    const payload: UploadPayloadItem[] = [];
+  private buildUploadItems(data: CSVData, tableMap: any[]): { items: UploadItem[]; errors: ValidationError[] } {
+    const activities = data.header.slice(1);
+    const items: UploadItem[] = [];
     const errors: ValidationError[] = [];
 
     data.rows.forEach((csvRow, rowIdx) => {
-      const student = (csvRow[0] || "").trim();
-      if (!student) return;
+      const studentName = (csvRow[0] || "").trim();
+      if (!studentName) return;
 
-      activities.forEach((activity, i) => {
+      activities.forEach((activityName, i) => {
         const mark = csvRow[i + 1];
         if (!mark || mark.trim() === "") return;
 
-        const trimmedMark = mark.trim();
-        const numericMark = Number(trimmedMark);
-
-        if (!Number.isFinite(numericMark)) {
+        const value = StringUtils.parseNumericValue(mark.trim());
+        if (value === null) {
           errors.push({
             row: rowIdx + 2,
-            student,
-            activity,
-            invalidValue: trimmedMark,
+            student: studentName,
+            activity: activityName,
+            invalidValue: mark.trim(),
           });
           return;
         }
 
-        const cell = tableMap.find((item) => item.rowName === student && item.columnName === activity);
-        if (!cell || !cell.markId) return;
+        const cell = tableMap.find(
+          (item) =>
+            StringUtils.normalize(item.rowName) === StringUtils.normalize(studentName) &&
+            StringUtils.normalize(item.columnName) === StringUtils.normalize(activityName)
+        );
+        if (!cell?.markId) return;
 
-        payload.push({
-          rowName: student,
-          columnName: activity,
-          markId: cell.markId,
-          value: numericMark,
-        });
+        items.push({ studentName, activityName, markId: cell.markId, value });
       });
     });
 
-    return { payload, errors };
+    return { items, errors };
   }
 
   /**
-   * Upload cells directly
+   * Upload items to Seneca
    */
-  private async uploadCells(cells: ModalTableCell[]): Promise<void> {
+  private async upload(items: UploadItem[]): Promise<void> {
     this.state = { paused: false, cancelled: false };
+    const calcProgress = (index: number) => (index / items.length) * 100;
 
-    for (let i = 0; i < cells.length; i++) {
+    for (let i = 0; i < items.length; i++) {
       if (this.state.cancelled) {
-        this.emitProgress(i, cells.length, (i / cells.length) * 100, "⏹ Proceso cancelado por el usuario", "error");
+        this.emitProgress(i, items.length, calcProgress(i), "⏹ Proceso cancelado por el usuario", "error");
         break;
       }
 
@@ -138,129 +142,38 @@ export class UploadHandler {
         await this.sleep(200);
       }
 
-      const cell = cells[i];
+      const item = items[i];
 
       try {
+        // Get criteria
         this.emitProgress(
           i,
-          cells.length,
-          (i / cells.length) * 100,
-          `🔍 Obteniendo criterios para ${cell.studentName} - ${cell.activityName}...`,
+          items.length,
+          calcProgress(i),
+          `🔍 Obteniendo criterios para ${item.studentName} - ${item.activityName}...`,
           "info"
         );
 
-        const result = await SenecaAPIService.getCriteria(cell.markId);
-        const { fields, criteria } = result;
+        const { fields, criteria } = await SenecaAPIService.getCriteria(item.markId);
+        this.emitProgress(i, items.length, calcProgress(i), `✓ ${criteria.length} criterios obtenidos`, "success");
 
+        // Upload mark
         this.emitProgress(
           i,
-          cells.length,
-          (i / cells.length) * 100,
-          `✓ ${criteria.length} criterios obtenidos`,
-          "success"
-        );
-
-        this.emitProgress(
-          i,
-          cells.length,
-          (i / cells.length) * 100,
-          `📤 Subiendo nota ${cell.value} a ${criteria.length} criterios...`,
-          "info"
-        );
-
-        const criteriaWithValues = criteria.map((c) => ({
-          id: c.id,
-          value: cell.value,
-        }));
-
-        await SenecaAPIService.postMark(cell.markId, criteriaWithValues, fields);
-
-        this.emitProgress(
-          i + 1,
-          cells.length,
-          ((i + 1) / cells.length) * 100,
-          `✓ ${cell.studentName} - ${cell.activityName}: ${cell.value}`,
-          "success"
-        );
-
-        await this.sleep(500);
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Error desconocido";
-        this.emitProgress(
-          i,
-          cells.length,
-          (i / cells.length) * 100,
-          `❌ Error: ${cell.studentName} - ${cell.activityName}: ${errorMessage}`,
-          "error"
-        );
-        this.emitProgress(i, cells.length, (i / cells.length) * 100, "⏹ Proceso detenido por error", "error");
-        break;
-      }
-    }
-
-    if (!this.state.cancelled && cells.length > 0) {
-      this.emitProgress(cells.length, cells.length, 100, "✅ Proceso completado", "success");
-    }
-  }
-
-  /**
-   * Upload payload items
-   */
-  private async uploadPayload(payload: UploadPayloadItem[]): Promise<void> {
-    this.state = { paused: false, cancelled: false };
-
-    for (let i = 0; i < payload.length; i++) {
-      if (this.state.cancelled) {
-        this.emitProgress(i, payload.length, (i / payload.length) * 100, "⏹ Proceso cancelado por el usuario", "error");
-        break;
-      }
-
-      while (this.state.paused && !this.state.cancelled) {
-        await this.sleep(200);
-      }
-
-      const item = payload[i];
-
-      try {
-        this.emitProgress(
-          i,
-          payload.length,
-          (i / payload.length) * 100,
-          `🔍 Obteniendo criterios para ${item.rowName} - ${item.columnName}...`,
-          "info"
-        );
-
-        const result = await SenecaAPIService.getCriteria(item.markId);
-        const { fields, criteria } = result;
-
-        this.emitProgress(
-          i,
-          payload.length,
-          (i / payload.length) * 100,
-          `✓ ${criteria.length} criterios obtenidos`,
-          "success"
-        );
-
-        this.emitProgress(
-          i,
-          payload.length,
-          (i / payload.length) * 100,
+          items.length,
+          calcProgress(i),
           `📤 Subiendo nota ${item.value} a ${criteria.length} criterios...`,
           "info"
         );
 
-        const criteriaWithValues = criteria.map((c) => ({
-          id: c.id,
-          value: item.value,
-        }));
-
+        const criteriaWithValues = criteria.map((c) => ({ id: c.id, value: item.value }));
         await SenecaAPIService.postMark(item.markId, criteriaWithValues, fields);
 
         this.emitProgress(
           i + 1,
-          payload.length,
-          ((i + 1) / payload.length) * 100,
-          `✓ ${item.rowName} - ${item.columnName}: ${item.value}`,
+          items.length,
+          calcProgress(i + 1),
+          `✓ ${item.studentName} - ${item.activityName}: ${item.value}`,
           "success"
         );
 
@@ -269,18 +182,18 @@ export class UploadHandler {
         const errorMessage = error instanceof Error ? error.message : "Error desconocido";
         this.emitProgress(
           i,
-          payload.length,
-          (i / payload.length) * 100,
-          `❌ Error: ${item.rowName} - ${item.columnName}: ${errorMessage}`,
+          items.length,
+          calcProgress(i),
+          `❌ Error: ${item.studentName} - ${item.activityName}: ${errorMessage}`,
           "error"
         );
-        this.emitProgress(i, payload.length, (i / payload.length) * 100, "⏹ Proceso detenido por error", "error");
+        this.emitProgress(i, items.length, calcProgress(i), "⏹ Proceso detenido por error", "error");
         break;
       }
     }
 
-    if (!this.state.cancelled && payload.length > 0) {
-      this.emitProgress(payload.length, payload.length, 100, "✅ Proceso completado", "success");
+    if (!this.state.cancelled && items.length > 0) {
+      this.emitProgress(items.length, items.length, 100, "✅ Proceso completado", "success");
     }
   }
 

@@ -72,6 +72,7 @@
 
 <script setup lang="ts">
 import type { CSVData, ModalTableCell, TableCell } from "@/types";
+import { StringUtils } from "@/utils/StringUtils";
 import { computed, nextTick, ref, useCssModule, watch } from "vue";
 
 const $style = useCssModule();
@@ -163,13 +164,7 @@ const activitiesAffectedCount = computed(() => {
   for (let col = 1; col < headersAll.length; col++) {
     const hasAny = rows.value.some((r) => {
       const s = (r[col] ?? "").toString().trim();
-      if (s === "") return false;
-      const cleaned = s.replace(/,/g, ".").replace(/[^0-9.\-]/g, "");
-      if (cleaned === "") return false;
-      const num = Number(cleaned);
-      if (!Number.isFinite(num)) return false;
-      if (num < 0 || num > 10) return false;
-      return true;
+      return StringUtils.isValidNumericMark(s);
     });
     if (hasAny) count++;
   }
@@ -184,11 +179,7 @@ const studentsAffectedCount = computed(() => {
     if (!student) return;
     const hasAny = row.slice(1).some((s) => {
       const val = (s ?? "").toString().trim();
-      if (val === "") return false;
-      const cleaned = val.replace(/,/g, ".").replace(/[^0-9.\-]/g, "");
-      if (cleaned === "") return false;
-      const num = Number(cleaned);
-      return Number.isFinite(num) && num >= 0 && num <= 10;
+      return StringUtils.isValidNumericMark(val);
     });
     if (hasAny) seen.add(student);
   });
@@ -242,14 +233,6 @@ const parseClipboard = (text: string): CSVData | null => {
   return { header, rows: body };
 };
 
-const normalize = (value: string): string =>
-  value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/\s+/g, " ")
-    .toLowerCase()
-    .trim();
-
 const onCellInput = (event: Event, rowIndex: number, colIndex: number) => {
   // Prevent editing of student name column
   if (colIndex === 0) return;
@@ -272,14 +255,18 @@ const applyPastedData = (data: CSVData): number => {
     const student = (pastedRow[0] || "").trim();
     if (!student) return;
 
-    const targetRowIndex = rows.value.findIndex((r) => normalize(r[0] || "") === normalize(student));
+    const targetRowIndex = rows.value.findIndex(
+      (r) => StringUtils.normalize(r[0] || "") === StringUtils.normalize(student)
+    );
     if (targetRowIndex === -1) return;
 
     pastedHeaders.forEach((pastedHeader, idx) => {
       const value = sanitizeValue((pastedRow[idx + 1] || "").trim(), colIndexFromHeader(pastedHeader, idx));
       if (value === "") return;
 
-      const headerMatchIndex = currentHeaders.findIndex((h) => normalize(h || "") === normalize(pastedHeader));
+      const headerMatchIndex = currentHeaders.findIndex(
+        (h) => StringUtils.normalize(h || "") === StringUtils.normalize(pastedHeader)
+      );
       const colIndex = headerMatchIndex !== -1 ? headerMatchIndex : idx + 1;
 
       ensureRowLength(targetRowIndex, colIndex);
@@ -332,14 +319,7 @@ const handleCellPaste = (event: ClipboardEvent, startRow: number, startCol: numb
 const sanitizeValue = (raw: string, colIndex: number): string => {
   // Never sanitize the first column (Alumno/a)
   if (colIndex === 0) return raw;
-  const cleaned = raw.replace(/,/g, ".").replace(/[^0-9.\-]/g, "");
-  if (cleaned === "") return "";
-  const num = Number(cleaned);
-  if (!Number.isFinite(num)) return "";
-  if (num < 0 || num > 10) return "";
-  // Keep up to 2 decimals, drop trailing zeros
-  const fixed = Math.round(num * 100) / 100;
-  return String(fixed);
+  return StringUtils.sanitizeNumericValue(raw);
 };
 
 const valueClass = (val: string, colIndex: number) => {
@@ -357,7 +337,9 @@ const valueClass = (val: string, colIndex: number) => {
 
 const colIndexFromHeader = (pastedHeader: string, fallbackIdx: number): number => {
   const currentHeaders = renderHeaders.value;
-  const matchIndex = currentHeaders.findIndex((h) => normalize(h || "") === normalize(pastedHeader));
+  const matchIndex = currentHeaders.findIndex(
+    (h) => StringUtils.normalize(h || "") === StringUtils.normalize(pastedHeader)
+  );
   return matchIndex !== -1 ? matchIndex : fallbackIdx + 1;
 };
 
@@ -387,7 +369,9 @@ const handleAccept = () => {
 
       // Find markId from tableCellsMap
       const cell = props.tableCellsMap.find(
-        (c) => normalize(c.rowName) === normalize(studentName) && normalize(c.columnName) === normalize(activityName)
+        (c) =>
+          StringUtils.normalize(c.rowName) === StringUtils.normalize(studentName) &&
+          StringUtils.normalize(c.columnName) === StringUtils.normalize(activityName)
       );
 
       if (!cell || !cell.markId) continue;
