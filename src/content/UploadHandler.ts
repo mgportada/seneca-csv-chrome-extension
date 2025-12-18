@@ -1,6 +1,6 @@
 import { SenecaAPIService } from "@/services/SenecaAPIService";
 import { TableParserService } from "@/services/TableParserService";
-import type { CSVData, UploadPayloadItem, UploadProgress, UploadState, ValidationError } from "@/types";
+import type { CSVData, ModalTableCell, UploadPayloadItem, UploadProgress, UploadState, ValidationError } from "@/types";
 import { CSVUtils } from "@/utils/CSVUtils";
 
 /**
@@ -25,6 +25,19 @@ export class UploadHandler {
     const text = await file.text();
     const data = CSVUtils.parseCSV(text);
     await this.processData(data);
+  }
+
+  /**
+   * Process cells directly from modal
+   */
+  async processCells(cells: ModalTableCell[]): Promise<void> {
+    if (!cells || cells.length === 0) {
+      this.emitProgress(0, 0, 0, "No hay celdas para procesar", "error");
+      return;
+    }
+
+    // Directly upload the provided cells
+    await this.uploadCells(cells);
   }
 
   /**
@@ -107,6 +120,87 @@ export class UploadHandler {
     });
 
     return { payload, errors };
+  }
+
+  /**
+   * Upload cells directly
+   */
+  private async uploadCells(cells: ModalTableCell[]): Promise<void> {
+    this.state = { paused: false, cancelled: false };
+
+    for (let i = 0; i < cells.length; i++) {
+      if (this.state.cancelled) {
+        this.emitProgress(i, cells.length, (i / cells.length) * 100, "⏹ Proceso cancelado por el usuario", "error");
+        break;
+      }
+
+      while (this.state.paused && !this.state.cancelled) {
+        await this.sleep(200);
+      }
+
+      const cell = cells[i];
+
+      try {
+        this.emitProgress(
+          i,
+          cells.length,
+          (i / cells.length) * 100,
+          `🔍 Obteniendo criterios para ${cell.studentName} - ${cell.activityName}...`,
+          "info"
+        );
+
+        const result = await SenecaAPIService.getCriteria(cell.markId);
+        const { fields, criteria } = result;
+
+        this.emitProgress(
+          i,
+          cells.length,
+          (i / cells.length) * 100,
+          `✓ ${criteria.length} criterios obtenidos`,
+          "success"
+        );
+
+        this.emitProgress(
+          i,
+          cells.length,
+          (i / cells.length) * 100,
+          `📤 Subiendo nota ${cell.value} a ${criteria.length} criterios...`,
+          "info"
+        );
+
+        const criteriaWithValues = criteria.map((c) => ({
+          id: c.id,
+          value: cell.value,
+        }));
+
+        await SenecaAPIService.postMark(cell.markId, criteriaWithValues, fields);
+
+        this.emitProgress(
+          i + 1,
+          cells.length,
+          ((i + 1) / cells.length) * 100,
+          `✓ ${cell.studentName} - ${cell.activityName}: ${cell.value}`,
+          "success"
+        );
+
+        await this.sleep(500);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+        this.emitProgress(
+          i,
+          cells.length,
+          (i / cells.length) * 100,
+          `❌ Error: ${cell.studentName} - ${cell.activityName}: ${errorMessage}`,
+          "error"
+        );
+        this.emitProgress(i, cells.length, (i / cells.length) * 100, "⏹ Proceso detenido por error", "error");
+        break;
+      }
+    }
+
+    if (!this.state.cancelled && cells.length > 0) {
+      this.emitProgress(cells.length, cells.length, 100, "✅ Proceso completado", "success");
+    }
   }
 
   /**

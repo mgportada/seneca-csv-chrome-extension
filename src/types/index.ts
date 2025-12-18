@@ -10,6 +10,13 @@ export interface TableCell {
   markId: string;
 }
 
+export interface ModalTableCell {
+  studentName: string;
+  activityName: string;
+  markId: string;
+  value: number;
+}
+
 /**
  * Evaluation criteria for a mark
  */

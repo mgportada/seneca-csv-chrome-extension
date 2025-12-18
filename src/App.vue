@@ -10,6 +10,7 @@
       :percentage="modalState.percentage"
       :initialHeaders="initialHeaders"
       :initialRows="initialRows"
+      :tableCellsMap="tableCellsMap"
       @close="handleModalClose"
       @submit="handleModalSubmit"
     />
@@ -21,7 +22,7 @@ import Toolbar from "@/components/Toolbar/Toolbar.vue";
 import UploadModal from "@/components/UploadModal/UploadModal.vue";
 import { UploadHandler } from "@/content/UploadHandler";
 import { TableParserService } from "@/services/TableParserService";
-import type { CSVData, UploadProgress } from "@/types";
+import type { ModalTableCell, TableCell, UploadProgress } from "@/types";
 import { reactive, ref } from "vue";
 
 interface ModalState {
@@ -45,15 +46,18 @@ const modalState = reactive<ModalState>({
 let uploadHandler: UploadHandler | null = null;
 const initialHeaders = ref<string[]>([]);
 const initialRows = ref<string[][]>([]);
+const tableCellsMap = ref<TableCell[]>([]);
 
 const openModal = () => {
   modalState.visible = true;
   // Build initial grid from the Seneca table (students x activities)
   initialHeaders.value = [];
   initialRows.value = [];
+  tableCellsMap.value = [];
   const table = document.querySelector<HTMLTableElement>("table");
   if (table) {
     const tableCells = TableParserService.parseTable(table);
+    tableCellsMap.value = tableCells;
     if (tableCells.length > 0) {
       const students = Array.from(new Set(tableCells.map((c) => c.rowName))).filter((n) => n && n.trim() !== "");
       const activities = Array.from(new Set(tableCells.map((c) => c.columnName))).filter((n) => n && n.trim() !== "");
@@ -63,7 +67,7 @@ const openModal = () => {
   }
 };
 
-const handleModalSubmit = async (data: CSVData) => {
+const handleModalSubmit = async (data: ModalTableCell[]) => {
   modalState.current = 0;
   modalState.total = 0;
   modalState.percentage = 0;
@@ -85,7 +89,7 @@ const handleModalSubmit = async (data: CSVData) => {
   });
 
   try {
-    await uploadHandler.processData(data);
+    await uploadHandler.processCells(data);
     modalState.uploading = false;
   } catch (error) {
     console.error("Error processing data:", error);

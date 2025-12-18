@@ -71,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import type { CSVData } from "@/types";
+import type { CSVData, ModalTableCell, TableCell } from "@/types";
 import { computed, nextTick, ref, useCssModule, watch } from "vue";
 
 const $style = useCssModule();
@@ -90,6 +90,7 @@ interface Props {
   percentage?: number;
   initialHeaders?: string[];
   initialRows?: string[][];
+  tableCellsMap?: TableCell[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -100,11 +101,12 @@ const props = withDefaults(defineProps<Props>(), {
   percentage: 0,
   initialHeaders: () => [],
   initialRows: () => [],
+  tableCellsMap: () => [],
 });
 
 const emit = defineEmits<{
   (e: "close"): void;
-  (e: "submit", payload: CSVData): void;
+  (e: "submit", payload: ModalTableCell[]): void;
 }>();
 
 const headers = ref<string[]>([]);
@@ -154,7 +156,49 @@ const computedPercentage = computed(() => {
   return Math.round((props.current / props.total) * 100);
 });
 
-const summaryText = computed(() => `Se sobrescribirán ${marksCount.value} notas para ${studentCount.value} alumnos`);
+// Activities with at least one valid numeric value (0-10)
+const activitiesAffectedCount = computed(() => {
+  const headersAll = renderHeaders.value;
+  let count = 0;
+  for (let col = 1; col < headersAll.length; col++) {
+    const hasAny = rows.value.some((r) => {
+      const s = (r[col] ?? "").toString().trim();
+      if (s === "") return false;
+      const cleaned = s.replace(/,/g, ".").replace(/[^0-9.\-]/g, "");
+      if (cleaned === "") return false;
+      const num = Number(cleaned);
+      if (!Number.isFinite(num)) return false;
+      if (num < 0 || num > 10) return false;
+      return true;
+    });
+    if (hasAny) count++;
+  }
+  return count;
+});
+
+// Students with at least one valid numeric mark to change
+const studentsAffectedCount = computed(() => {
+  const seen = new Set<string>();
+  rows.value.forEach((row) => {
+    const student = (row?.[0] ?? "").toString().trim();
+    if (!student) return;
+    const hasAny = row.slice(1).some((s) => {
+      const val = (s ?? "").toString().trim();
+      if (val === "") return false;
+      const cleaned = val.replace(/,/g, ".").replace(/[^0-9.\-]/g, "");
+      if (cleaned === "") return false;
+      const num = Number(cleaned);
+      return Number.isFinite(num) && num >= 0 && num <= 10;
+    });
+    if (hasAny) seen.add(student);
+  });
+  return seen.size;
+});
+
+const summaryText = computed(
+  () =>
+    `Se sobrescribirán ${marksCount.value} notas para ${studentsAffectedCount.value} alumnos en ${activitiesAffectedCount.value} actividades`
+);
 
 const handleClose = () => {
   emit("close");
@@ -326,18 +370,36 @@ const ensureRowLength = (rowIndex: number, colIndex: number) => {
 };
 
 const handleAccept = () => {
-  const cols = renderHeaders.value.length;
+  const headersAll = renderHeaders.value;
   const sourceRows = rows.value.length > 0 ? rows.value : renderRows.value;
-  const normalizedRows = sourceRows.map((row) => {
-    const clone = [...row];
-    while (clone.length < cols) clone.push("");
-    return clone.slice(0, cols);
-  });
+  const payload: ModalTableCell[] = [];
 
-  const payload: CSVData = {
-    header: renderHeaders.value,
-    rows: normalizedRows,
-  };
+  sourceRows.forEach((row) => {
+    const studentName = (row[0] ?? "").toString().trim();
+    if (!studentName) return;
+
+    for (let col = 1; col < headersAll.length; col++) {
+      const raw = (row[col] ?? "").toString().trim();
+      const val = sanitizeValue(raw, col);
+      if (val === "") continue; // skip non-numeric/empty
+
+      const activityName = headersAll[col];
+
+      // Find markId from tableCellsMap
+      const cell = props.tableCellsMap.find(
+        (c) => normalize(c.rowName) === normalize(studentName) && normalize(c.columnName) === normalize(activityName)
+      );
+
+      if (!cell || !cell.markId) continue;
+
+      payload.push({
+        studentName,
+        activityName,
+        markId: cell.markId,
+        value: Number(val),
+      });
+    }
+  });
 
   emit("submit", payload);
 };
