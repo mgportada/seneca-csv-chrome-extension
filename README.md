@@ -53,4 +53,5 @@ MIT
 ## TODO
 
 - [ ] Freeze header row and first column when scrolling in the upload modal table
-- [ ] Fetch mark with value, filter empty marks "" in the payload
+- [ ] Select multiple cell in the table to remove marks
+- [ ] Move between cells using arrow keys
