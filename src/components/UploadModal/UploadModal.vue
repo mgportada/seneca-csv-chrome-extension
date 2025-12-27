@@ -19,15 +19,15 @@
               <table :class="$style.dataTable" @paste.prevent="handlePaste">
                 <thead>
                   <tr>
-                    <th v-for="(header, index) in renderHeaders" :key="index">
+                    <th v-for="(header, index) in headers" :key="index">
                       {{ header || `Columna ${index + 1}` }}
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(row, rowIndex) in renderRows" :key="rowIndex">
+                  <tr v-for="(row, rowIndex) in rows" :key="rowIndex">
                     <td
-                      v-for="(header, colIndex) in renderHeaders"
+                      v-for="(header, colIndex) in headers"
                       :key="colIndex"
                       :contenteditable="colIndex !== 0"
                       :data-row="rowIndex"
@@ -114,32 +114,6 @@ const headers = ref<string[]>([]);
 const rows = ref<string[][]>([]);
 const logContainer = ref<HTMLDivElement | null>(null);
 
-const displayHeaders = computed(() => {
-  const maxCols = Math.max(headers.value.length, ...rows.value.map((r) => r.length), 2);
-  const base = headers.value.slice(0, maxCols);
-
-  for (let i = 0; i < maxCols; i++) {
-    if (!base[i] || base[i].trim() === "") {
-      base[i] = i === 0 ? "Alumno/a" : `Actividad ${i}`;
-    }
-  }
-
-  return base;
-});
-
-const DEFAULT_COLS = 5; // Alumno/a + 4 actividades
-const DEFAULT_ROWS = 8;
-
-const renderHeaders = computed(() => {
-  if (displayHeaders.value.length > 0) return displayHeaders.value;
-  return Array.from({ length: DEFAULT_COLS }, (_, i) => (i === 0 ? "Alumno/a" : `Actividad ${i}`));
-});
-
-const renderRows = computed(() => {
-  if (rows.value.length > 0) return rows.value;
-  return Array.from({ length: DEFAULT_ROWS }, () => Array.from({ length: renderHeaders.value.length }, () => ""));
-});
-
 const studentCount = computed(() => {
   const names = rows.value.map((r) => (r[0] || "").trim()).filter(Boolean);
   return new Set(names).size;
@@ -159,7 +133,7 @@ const computedPercentage = computed(() => {
 
 // Activities with at least one valid numeric value (0-10)
 const activitiesAffectedCount = computed(() => {
-  const headersAll = renderHeaders.value;
+  const headersAll = headers.value;
   let count = 0;
   for (let col = 1; col < headersAll.length; col++) {
     const hasAny = rows.value.some((r) => {
@@ -247,7 +221,7 @@ const onCellInput = (event: Event, rowIndex: number, colIndex: number) => {
 };
 
 const applyPastedData = (data: CSVData): number => {
-  const currentHeaders = renderHeaders.value;
+  const currentHeaders = headers.value;
   const pastedHeaders = data.header.slice(1).map((h) => h.trim());
   let changes = 0;
 
@@ -336,7 +310,7 @@ const valueClass = (val: string, colIndex: number) => {
 };
 
 const colIndexFromHeader = (pastedHeader: string, fallbackIdx: number): number => {
-  const currentHeaders = renderHeaders.value;
+  const currentHeaders = headers.value;
   const matchIndex = currentHeaders.findIndex(
     (h) => StringUtils.normalize(h || "") === StringUtils.normalize(pastedHeader)
   );
@@ -352,8 +326,8 @@ const ensureRowLength = (rowIndex: number, colIndex: number) => {
 };
 
 const handleAccept = () => {
-  const headersAll = renderHeaders.value;
-  const sourceRows = rows.value.length > 0 ? rows.value : renderRows.value;
+  const headersAll = headers.value;
+  const sourceRows = rows.value;
   const payload: ModalTableCell[] = [];
 
   sourceRows.forEach((row) => {

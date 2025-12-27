@@ -17,7 +17,7 @@ export class TableParserService {
 
     if (headers.length === 0 || tbodyRows.length === 0) return [];
 
-    tbodyRows.forEach((tr, rowIndex) => {
+    tbodyRows.forEach((tr) => {
       const studentName = this.getStudentName(tr);
       const tds = Array.from(tr.querySelectorAll("td"));
 
@@ -29,9 +29,6 @@ export class TableParserService {
         if (!markId) return;
 
         result.push({
-          id: `${rowIndex}#${colIndex}`,
-          rowIndex,
-          colIndex,
           rowName: studentName,
           columnName: headers[colIndex],
           markId,

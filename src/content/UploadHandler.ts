@@ -1,18 +1,5 @@
 import { SenecaAPIService } from "@/services/SenecaAPIService";
-import { TableParserService } from "@/services/TableParserService";
-import type { CSVData, ModalTableCell, UploadProgress, UploadState, ValidationError } from "@/types";
-import { CSVUtils } from "@/utils/CSVUtils";
-import { StringUtils } from "@/utils/StringUtils";
-
-/**
- * Unified upload item interface
- */
-interface UploadItem {
-  studentName: string;
-  activityName: string;
-  markId: string;
-  value: number;
-}
+import type { ModalTableCell, UploadProgress, UploadState } from "@/types";
 
 /**
  * Handler for CSV upload functionality
@@ -30,105 +17,14 @@ export class UploadHandler {
   }
 
   /**
-   * Process uploaded CSV file
+   * Upload items to Seneca
    */
-  async processFile(file: File): Promise<void> {
-    const text = await file.text();
-    const data = CSVUtils.parseCSV(text);
-    await this.processData(data);
-  }
-
-  /**
-   * Process cells directly from modal
-   */
-  async processCells(cells: ModalTableCell[]): Promise<void> {
-    if (!cells || cells.length === 0) {
+  async processCells(items: ModalTableCell[]): Promise<void> {
+    if (!items || items.length === 0) {
       this.emitProgress(0, 0, 0, "No hay celdas para procesar", "error");
       return;
     }
 
-    await this.upload(cells);
-  }
-
-  /**
-   * Process already parsed CSV-like data (pasted grid)
-   */
-  async processData(data: CSVData | null): Promise<void> {
-    if (!data || data.rows.length === 0) {
-      this.emitProgress(0, 0, 0, "CSV vacío o inválido", "error");
-      return;
-    }
-
-    const table = document.querySelector<HTMLTableElement>("table");
-    if (!table) {
-      this.emitProgress(0, 0, 0, "No se encontró la tabla", "error");
-      return;
-    }
-
-    const tableMap = TableParserService.parseTable(table);
-    if (!tableMap || tableMap.length === 0) {
-      this.emitProgress(0, 0, 0, "No se pudo parsear la tabla", "error");
-      return;
-    }
-
-    const { items, errors } = this.buildUploadItems(data, tableMap);
-
-    if (errors.length > 0) {
-      const errorMsg = errors
-        .map((e) => `Fila ${e.row}: "${e.student}" - "${e.activity}" tiene valor inválido: "${e.invalidValue}"`)
-        .join("\n");
-      this.emitProgress(0, 0, 0, `⚠️ CSV contiene valores no numéricos:\n\n${errorMsg}`, "error");
-      return;
-    }
-
-    await this.upload(items);
-  }
-
-  /**
-   * Build upload items from CSV data
-   */
-  private buildUploadItems(data: CSVData, tableMap: any[]): { items: UploadItem[]; errors: ValidationError[] } {
-    const activities = data.header.slice(1);
-    const items: UploadItem[] = [];
-    const errors: ValidationError[] = [];
-
-    data.rows.forEach((csvRow, rowIdx) => {
-      const studentName = (csvRow[0] || "").trim();
-      if (!studentName) return;
-
-      activities.forEach((activityName, i) => {
-        const mark = csvRow[i + 1];
-        if (!mark || mark.trim() === "") return;
-
-        const value = StringUtils.parseNumericValue(mark.trim());
-        if (value === null) {
-          errors.push({
-            row: rowIdx + 2,
-            student: studentName,
-            activity: activityName,
-            invalidValue: mark.trim(),
-          });
-          return;
-        }
-
-        const cell = tableMap.find(
-          (item) =>
-            StringUtils.normalize(item.rowName) === StringUtils.normalize(studentName) &&
-            StringUtils.normalize(item.columnName) === StringUtils.normalize(activityName)
-        );
-        if (!cell?.markId) return;
-
-        items.push({ studentName, activityName, markId: cell.markId, value });
-      });
-    });
-
-    return { items, errors };
-  }
-
-  /**
-   * Upload items to Seneca
-   */
-  private async upload(items: UploadItem[]): Promise<void> {
     this.state = { paused: false, cancelled: false };
     const calcProgress = (index: number) => (index / items.length) * 100;
 
