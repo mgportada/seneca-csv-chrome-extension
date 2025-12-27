@@ -52,6 +52,6 @@ MIT
 
 ## TODO
 
-- [ ] Freeze header row and first column when scrolling in the upload modal table
 - [ ] Select multiple cell in the table to remove marks
+- [ ] Freeze header row and first column when scrolling in the upload modal table
 - [ ] Move between cells using arrow keys

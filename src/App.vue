@@ -90,7 +90,8 @@ const handleModalSubmit = async (data: ModalTableCell[]) => {
 
   try {
     await uploadHandler.processCells(data);
-    modalState.uploading = false;
+    // Refresh page after successful upload
+    window.location.reload();
   } catch (error) {
     console.error("Error processing data:", error);
     modalState.logs.push({
