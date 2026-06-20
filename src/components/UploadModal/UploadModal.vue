@@ -45,13 +45,15 @@
             </div>
           </div>
 
-          <div v-if="logs.length" :class="$style.logPanel" ref="logContainer">
+          <div v-if="logs.length" :class="$style.logPanel">
             <div :class="$style.logHeader">Progreso</div>
             <div :class="$style.progressTrack">
               <div :class="$style.progressFill" :style="{ width: `${computedPercentage}%` }"></div>
             </div>
-            <div v-for="(log, index) in logs" :key="index" :class="getLogClass(log.type)">
-              {{ log.message }}
+            <div :class="$style.logMessages" ref="logContainer">
+              <div v-for="(log, index) in logs" :key="index" :class="getLogClass(log.type)">
+                {{ log.message }}
+              </div>
             </div>
           </div>
         </section>
